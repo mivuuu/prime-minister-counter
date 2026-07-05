@@ -120,6 +120,14 @@ body {
   animation: slideUpIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+.digit-old.reverse {
+  animation: slideDownOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.digit-new.reverse {
+  animation: slideDownIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 @keyframes slideUpOut {
   from { transform: translateY(0); opacity: 1; }
   to { transform: translateY(-100%); opacity: 0; }
@@ -127,6 +135,16 @@ body {
 
 @keyframes slideUpIn {
   from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDownOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(100%); opacity: 0; }
+}
+
+@keyframes slideDownIn {
+  from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
@@ -230,6 +248,7 @@ const statusText = document.getElementById('status-text');
 const lastUpdateEl = document.getElementById('last-update');
 
 let cells = [];
+let prevValue = 0;
 
 function setStatus(state) {
   dotEl.className = 'dot';
@@ -271,6 +290,8 @@ function pad(n, len) {
 
 function updateCounter(value) {
   const str = pad(value, Math.max(MIN_DIGITS, String(value).length));
+  const reverse = value < prevValue;
+  prevValue = value;
 
   if (cells.length !== str.length) {
     buildCells(str.length);
@@ -285,10 +306,12 @@ function updateCounter(value) {
 
       const newEl = document.createElement('span');
       newEl.className = 'digit digit-new';
+      if (reverse) newEl.classList.add('reverse');
       newEl.textContent = d;
 
       oldEl.classList.remove('digit');
       oldEl.classList.add('digit', 'digit-old');
+      if (reverse) oldEl.classList.add('reverse');
 
       c.cell.insertBefore(newEl, divider);
 
@@ -298,7 +321,7 @@ function updateCounter(value) {
 
       setTimeout(() => {
         oldEl.remove();
-        newEl.classList.remove('digit-new');
+        newEl.classList.remove('digit-new', 'reverse');
       }, 400);
 
       c.val = d;
