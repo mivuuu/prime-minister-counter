@@ -3,352 +3,346 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Счётчик</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>Счётчик высеров Гросса</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
 <style>
-  :root{
-    --bg: #131210;
-    --plaque: #1c1a17;
-    --plaque-edge: #2a2724;
-    --hazard-a: #f0a500;
-    --hazard-b: #0d0c0a;
-    --led-red: #ff2e2e;
-    --led-red-dim: #4a0d0d;
-    --off-white: #e8e4da;
-    --steel: #59544c;
-    --rivet: #050504;
-    --shadow: rgba(0,0,0,0.6);
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  *{box-sizing:border-box;}
+body {
+  background: #0a0a0a;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-  body{
-    margin:0;
-    min-height:100vh;
-    background: var(--bg);
-    background-image:
-      radial-gradient(ellipse at 50% 30%, rgba(240,165,0,0.05), transparent 60%),
-      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:'Oswald', sans-serif;
-    padding: 24px;
-  }
+.container {
+  width: 100%;
+  max-width: 560px;
+  padding: 1.5rem;
+}
 
-  .plaque{
-    position:relative;
-    width: 620px;
-    max-width: 100%;
-    background: linear-gradient(180deg, var(--plaque), #16140f);
-    border: 1px solid var(--plaque-edge);
-    border-radius: 6px;
-    box-shadow:
-      0 30px 60px var(--shadow),
-      inset 0 1px 0 rgba(255,255,255,0.04),
-      inset 0 -20px 40px rgba(0,0,0,0.4);
-    padding: 0 0 34px 0;
-    overflow:hidden;
-  }
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(80px) saturate(1.2);
+  -webkit-backdrop-filter: blur(80px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
 
-  .hazard-strip{
-    height: 12px;
-    background: repeating-linear-gradient(
-      135deg,
-      var(--hazard-a) 0 14px,
-      var(--hazard-b) 14px 28px
-    );
-  }
+.label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  margin-bottom: 1.75rem;
+  text-transform: uppercase;
+  user-select: none;
+  line-height: 1.3;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-  .rivet{
-    position:absolute;
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #6b6558, var(--rivet) 70%);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 0 1px rgba(255,255,255,0.3);
-  }
-  .rivet.tl{ top: 20px; left: 14px; }
-  .rivet.tr{ top: 20px; right: 14px; }
-  .rivet.bl{ bottom: 14px; left: 14px; }
-  .rivet.br{ bottom: 14px; right: 14px; }
+.counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  perspective: 800px;
+}
 
-  .eyebrow{
-    text-align:center;
-    color: var(--hazard-a);
-    font-size: 11px;
-    letter-spacing: 3px;
-    font-weight: 600;
-    margin: 26px 0 6px;
-    opacity: 0.85;
-  }
+.digit-cell {
+  position: relative;
+  width: 88px;
+  height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: border-color 0.3s ease;
+}
 
-  h1{
-    margin: 0 40px 28px;
-    text-align:center;
-    font-size: 20px;
-    line-height: 1.35;
-    letter-spacing: 1px;
-    font-weight: 600;
-    color: var(--off-white);
-    text-transform: uppercase;
-  }
+.digit-cell.active {
+  border-color: rgba(0, 122, 255, 0.25);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(0, 122, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
 
-  .counter-frame{
-    margin: 0 32px 24px;
-    padding: 20px 16px;
-    background: linear-gradient(180deg, #0c0b09, #171512);
-    border: 1px solid #000;
-    border-radius: 4px;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), inset 0 -1px 0 rgba(255,255,255,0.03);
-  }
+.digit-cell .divider {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.04);
+  z-index: 2;
+  pointer-events: none;
+}
 
-  .digits{
-    display:flex;
-    justify-content:center;
-    gap: 10px;
-  }
+.digit {
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 3.75rem;
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.02em;
+  transform-style: preserve-3d;
+  user-select: none;
+  position: relative;
+  z-index: 1;
+}
 
-  .digit{
-    position:relative;
-    width: 68px;
-    height: 92px;
-    background: #0a0908;
-    border-radius: 3px;
-    border: 1px solid #000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow: inset 0 0 14px rgba(255,46,46,0.05);
-    overflow:hidden;
-  }
+.digit.flip {
+  animation: flipDigit 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  .digit::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 1px, transparent 1px, transparent 3px);
-    pointer-events:none;
-    z-index:2;
+@keyframes flipDigit {
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
   }
+  45% {
+    transform: rotateX(-90deg);
+    opacity: 0.3;
+    color: rgba(0, 122, 255, 0.8);
+  }
+  55% {
+    transform: rotateX(90deg);
+    opacity: 0.3;
+    color: rgba(0, 122, 255, 0.8);
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
 
-  .digit::after{
-    content:"";
-    position:absolute;
-    top:0; left:0; right:0;
-    height: 50%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent);
-    pointer-events:none;
-  }
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
 
-  .digit span{
-    font-family:'Share Tech Mono', monospace;
-    font-size: 52px;
-    color: var(--led-red);
-    text-shadow: 0 0 6px rgba(255,46,46,0.65), 0 0 18px rgba(255,46,46,0.3);
-    z-index:1;
-    transition: opacity 0.08s ease;
-  }
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff3b30;
+  display: inline-block;
+  transition: all 0.4s ease;
+}
 
-  .digit.flip span{
-    animation: flick 0.35s ease;
-  }
+.dot.connected {
+  background: #34c759;
+}
 
-  @keyframes flick{
-    0%{ opacity:1; transform: translateY(0); }
-    30%{ opacity: 0.15; transform: translateY(-6px); }
-    60%{ opacity: 0.7; transform: translateY(2px); }
-    100%{ opacity:1; transform: translateY(0); }
-  }
+.dot.connecting {
+  background: #ff9f0a;
+  animation: pulse 1s ease-in-out infinite;
+}
 
-  .status-bar{
-    margin: 0 32px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding-top: 14px;
-    border-top: 1px dashed #33302b;
-  }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
-  .status-left{
-    display:flex;
-    align-items:center;
-    gap: 8px;
-    font-family:'Share Tech Mono', monospace;
-    font-size: 12px;
-    color: #8fbf6f;
-  }
+.status-text {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.05em;
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+}
 
-  .dot{
-    width: 7px; height:7px;
-    border-radius: 50%;
-    background: #59d15c;
-    box-shadow: 0 0 6px #59d15c;
-    animation: pulse 2s infinite;
-  }
+.last-update {
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.12);
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+}
 
-  @keyframes pulse{
-    0%,100%{ opacity:1; }
-    50%{ opacity: 0.35; }
-  }
+@media (max-width: 600px) {
+  body { touch-action: none; }
+  .container { padding: 0.5rem; }
+  .card { padding: 1.5rem 0.75rem; border-radius: 20px; }
+  .label { font-size: 0.5rem; margin-bottom: 1rem; max-width: 95%; }
+  .counter { gap: 0.35rem; margin-bottom: 1rem; }
+  .digit-cell { width: 56px; height: 74px; border-radius: 12px; }
+  .digit { font-size: 2.5rem; }
+}
 
-  .dot.off{
-    background: #d64545;
-    box-shadow: 0 0 6px #d64545;
-    animation: none;
-  }
-  .status-left #statusText{
-    color: inherit;
-  }
-  .status-left.off{
-    color: #d64545;
-  }
-
-  .timestamp{
-    font-family:'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--steel);
-    letter-spacing: 0.5px;
-  }
-
-  @media (prefers-reduced-motion: reduce){
-    .dot{ animation:none; }
-    .digit.flip span{ animation:none; }
-  }
+@media (max-width: 380px) {
+  .label { font-size: 0.45rem; }
+  .card { padding: 1rem 0.5rem; border-radius: 16px; }
+  .digit-cell { width: 44px; height: 58px; border-radius: 10px; }
+  .digit { font-size: 1.75rem; }
+  .counter { gap: 0.25rem; }
+}
 </style>
 </head>
 <body>
 
-<div class="plaque">
-  <div class="hazard-strip"></div>
-  <div class="rivet tl"></div>
-  <div class="rivet tr"></div>
-  <div class="rivet bl"></div>
-  <div class="rivet br"></div>
+<div class="container">
+  <div class="card">
+    <div class="label" id="label">Столько раз высрался гроссцийский мудак</div>
 
-  <div class="eyebrow">УЧЁТНАЯ ТАБЛИЧКА №04</div>
-  <h1>Столько раз высрался<br>гроссцийский мудак</h1>
+    <div class="counter" id="counter"></div>
 
-  <div class="counter-frame">
-    <div class="digits" id="digits"></div>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span class="status-text" id="status-text">Connecting</span>
+    </div>
+    <div class="last-update" id="last-update"></div>
   </div>
-
-  <div class="status-bar">
-    <div class="status-left"><span class="dot" id="statusDot"></span> <span id="statusText">ПОДКЛЮЧЕНИЕ...</span></div>
-    <div class="timestamp" id="ts">—</div>
-  </div>
-
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-  // ====== НАСТРОЙКИ ======
-  const SUPABASE_URL = 'https://wnsaumdxenokulbpzckv.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Induc2F1bWR4ZW5va3VsYnB6Y2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMDAzMTgsImV4cCI6MjA5ODc3NjMxOH0.APbc63eb6cbyTfSpx3yoCi0hosDaNBMnWBPawloSHx8';
-  const TABLE_NAME = 'counters';
-  const ROW_ID = 'ПМ-Гросса';
-  const COUNT_COLUMN = 'value';
-  const MIN_DIGITS = 4;
-  // ========================
+const SUPABASE_URL = 'https://wnsaumdxenokulbpzckv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Induc2F1bWR4ZW5va3VsYnB6Y2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMDAzMTgsImV4cCI6MjA5ODc3NjMxOH0.APbc63eb6cbyTfSpx3yoCi0hosDaNBMnWBPawloSHx8';
+const COUNTER_ID = 'ПМ-Гросса';
+const MIN_DIGITS = 4;
 
-  const digitsEl = document.getElementById('digits');
-  const tsEl = document.getElementById('ts');
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const statusLeft = document.querySelector('.status-left');
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  let cells = [];
+const counterEl = document.getElementById('counter');
+const labelEl = document.getElementById('label');
+const dotEl = document.getElementById('dot');
+const statusText = document.getElementById('status-text');
+const lastUpdateEl = document.getElementById('last-update');
 
-  function buildCells(n){
-    digitsEl.innerHTML = '';
-    cells = [];
-    for(let i = 0; i < n; i++){
-      const cell = document.createElement('div');
-      cell.className = 'digit';
-      const span = document.createElement('span');
-      span.textContent = '0';
-      cell.appendChild(span);
-      digitsEl.appendChild(cell);
-      cells.push({ cell, span, val: '0' });
+let cells = [];
+
+function setStatus(state) {
+  dotEl.className = 'dot';
+  if (state === 'connected') {
+    dotEl.classList.add('connected');
+    statusText.textContent = 'Connected';
+  } else if (state === 'connecting') {
+    dotEl.classList.add('connecting');
+    statusText.textContent = 'Connecting...';
+  } else {
+    statusText.textContent = 'Disconnected';
+  }
+}
+
+function buildCells(count) {
+  counterEl.innerHTML = '';
+  cells = [];
+  for (let i = 0; i < count; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'digit-cell';
+
+    const digit = document.createElement('span');
+    digit.className = 'digit';
+    digit.textContent = '0';
+
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+
+    cell.appendChild(digit);
+    cell.appendChild(divider);
+    counterEl.appendChild(cell);
+    cells.push({ cell, digit, val: 0 });
+  }
+}
+
+function pad(n, len) {
+  return String(n).padStart(len, '0');
+}
+
+function updateCounter(value) {
+  const str = pad(value, Math.max(MIN_DIGITS, String(value).length));
+
+  if (cells.length !== str.length) {
+    buildCells(str.length);
+  }
+
+  for (let i = 0; i < str.length; i++) {
+    const d = str[i];
+    const c = cells[i];
+    if (String(c.val) !== d) {
+      c.digit.textContent = d;
+      c.digit.classList.remove('flip');
+      c.cell.classList.remove('active');
+      void c.digit.offsetWidth;
+      c.digit.classList.add('flip');
+      c.cell.classList.add('active');
+      c.val = d;
     }
   }
+}
 
-  function render(value){
-    const str = String(value).padStart(MIN_DIGITS, '0');
-    if(cells.length !== str.length) buildCells(str.length);
-    for(let i = 0; i < str.length; i++){
-      const d = str[i];
-      const c = cells[i];
-      if(c.val !== d){
-        c.span.textContent = d;
-        c.cell.classList.remove('flip');
-        void c.cell.offsetWidth;
-        c.cell.classList.add('flip');
-        c.val = d;
-      }
-    }
+function updateDisplay(data) {
+  if (!data) return;
+  updateCounter(data.value ?? 0);
+  if (data.updated_at) {
+    lastUpdateEl.textContent = new Date(data.updated_at).toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
   }
+}
 
-  function setStatus(online){
-    if(online){
-      statusDot.classList.remove('off');
-      statusLeft.classList.remove('off');
-      statusText.textContent = 'ОНЛАЙН';
-    } else {
-      statusDot.classList.add('off');
-      statusLeft.classList.add('off');
-      statusText.textContent = 'НЕТ СВЯЗИ';
-    }
-  }
-
-  function setTimestamp(iso){
-    if(!iso) return;
-    const d = new Date(iso);
-    const pad = n => String(n).padStart(2,'0');
-    tsEl.textContent = `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  }
-
-  function updateDisplay(data){
-    if(!data) return;
-    render(data[COUNT_COLUMN] ?? 0);
-    setTimestamp(data.updated_at);
-  }
-
-  buildCells(MIN_DIGITS);
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  async function loadInitial(){
-    const { data, error } = await supabase
-      .from(TABLE_NAME)
+async function loadInitial() {
+  try {
+    const { data, error } = await client
+      .from('counters')
       .select('*')
-      .eq('id', ROW_ID)
+      .eq('id', COUNTER_ID)
       .single();
 
-    if(error && error.code !== 'PGRST116'){
-      console.error('Ошибка загрузки счётчика:', error);
+    if (error && error.code !== 'PGRST116') console.error('Load error:', error);
+
+    buildCells(MIN_DIGITS);
+    if (data) {
+      updateDisplay(data);
     }
-    if(data) updateDisplay(data);
+  } catch (err) {
+    console.error('Load error:', err);
+    buildCells(MIN_DIGITS);
   }
+}
 
-  function subscribeToChanges(){
-    supabase
-      .channel('counters-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: TABLE_NAME },
-        (payload) => {
-          if(payload.new && payload.new.id === ROW_ID) updateDisplay(payload.new);
-        }
-      )
-      .subscribe((status) => {
-        setStatus(status === 'SUBSCRIBED');
-      });
-  }
+setStatus('connecting');
 
-  loadInitial();
-  subscribeToChanges();
+client
+  .channel('counters-realtime')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'counters' }, (payload) => {
+    if (payload.new && payload.new.id === COUNTER_ID) updateDisplay(payload.new);
+  })
+  .subscribe((status) => {
+    if (status === 'SUBSCRIBED') setStatus('connected');
+  });
+
+loadInitial();
 </script>
-
 </body>
 </html>
