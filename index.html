@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ПМ-Гросса</title>
+<title>Счётчик высеров Гросса</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
 <style>
@@ -40,14 +40,18 @@ body {
 }
 
 .label {
-  font-size: 0.8rem;
-  font-weight: 400;
-  letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.3);
   text-align: center;
   margin-bottom: 1.75rem;
   text-transform: uppercase;
   user-select: none;
+  line-height: 1.3;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .counter {
@@ -188,13 +192,14 @@ body {
   body { touch-action: none; }
   .container { padding: 0.5rem; }
   .card { padding: 1.5rem 0.75rem; border-radius: 20px; }
-  .label { font-size: 0.6rem; margin-bottom: 1rem; }
+  .label { font-size: 0.5rem; margin-bottom: 1rem; max-width: 95%; }
   .counter { gap: 0.35rem; margin-bottom: 1rem; }
   .digit-cell { width: 56px; height: 74px; border-radius: 12px; }
   .digit { font-size: 2.5rem; }
 }
 
 @media (max-width: 380px) {
+  .label { font-size: 0.45rem; }
   .card { padding: 1rem 0.5rem; border-radius: 16px; }
   .digit-cell { width: 44px; height: 58px; border-radius: 10px; }
   .digit { font-size: 1.75rem; }
@@ -206,7 +211,7 @@ body {
 
 <div class="container">
   <div class="card">
-    <div class="label" id="label">—</div>
+    <div class="label" id="label">Столько раз высрался гроссцийский мудак</div>
 
     <div class="counter" id="counter"></div>
 
@@ -298,7 +303,6 @@ function updateCounter(value) {
 function updateDisplay(data) {
   if (!data) return;
   updateCounter(data.value ?? 0);
-  if (data.label) labelEl.textContent = data.label;
   if (data.updated_at) {
     lastUpdateEl.textContent = new Date(data.updated_at).toLocaleString('ru-RU', {
       day: '2-digit', month: '2-digit', year: 'numeric',
@@ -320,13 +324,10 @@ async function loadInitial() {
     buildCells(MIN_DIGITS);
     if (data) {
       updateDisplay(data);
-    } else {
-      labelEl.textContent = COUNTER_ID;
     }
   } catch (err) {
     console.error('Load error:', err);
     buildCells(MIN_DIGITS);
-    labelEl.textContent = COUNTER_ID;
   }
 }
 
