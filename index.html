@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ПМ-Гросса</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,8 +12,10 @@
 body {
   background: #0a0a0a;
   color: rgba(255, 255, 255, 0.9);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
-  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,7 +98,7 @@ body {
 }
 
 .digit {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
   font-size: 3.75rem;
   font-weight: 300;
   line-height: 1;
@@ -169,6 +171,7 @@ body {
   font-weight: 400;
   color: rgba(255, 255, 255, 0.25);
   letter-spacing: 0.05em;
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
 }
 
 .last-update {
@@ -178,19 +181,21 @@ body {
   color: rgba(255, 255, 255, 0.12);
   margin-top: 0.15rem;
   font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
 }
 
 @media (max-width: 600px) {
-  .container { padding: 0.75rem; }
-  .card { padding: 1.75rem 1rem; border-radius: 20px; }
-  .label { font-size: 0.65rem; margin-bottom: 1.25rem; }
-  .counter { gap: 0.35rem; }
+  body { touch-action: none; }
+  .container { padding: 0.5rem; }
+  .card { padding: 1.5rem 0.75rem; border-radius: 20px; }
+  .label { font-size: 0.6rem; margin-bottom: 1rem; }
+  .counter { gap: 0.35rem; margin-bottom: 1rem; }
   .digit-cell { width: 56px; height: 74px; border-radius: 12px; }
   .digit { font-size: 2.5rem; }
 }
 
 @media (max-width: 380px) {
-  .card { padding: 1.25rem 0.75rem; border-radius: 16px; }
+  .card { padding: 1rem 0.5rem; border-radius: 16px; }
   .digit-cell { width: 44px; height: 58px; border-radius: 10px; }
   .digit { font-size: 1.75rem; }
   .counter { gap: 0.25rem; }
