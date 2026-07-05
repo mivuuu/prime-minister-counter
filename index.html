@@ -3,107 +3,375 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter</title>
+<title>ПМ-Гросса Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #0a0a0f;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #050510;
+  color: #e0e0ff;
+  font-family: 'Orbitron', sans-serif;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Animated background grid */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 0;
+  animation: gridShift 8s linear infinite;
+}
+
+@keyframes gridShift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(60px, 60px); }
+}
+
+/* Glowing orbs */
+body::after {
+  content: '';
+  position: fixed;
+  top: -30%; left: -20%;
+  width: 80%; height: 80%;
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.08), transparent 70%);
+  z-index: 0;
+  animation: orbFloat 12s ease-in-out infinite alternate;
+}
+
+@keyframes orbFloat {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(30%, 20%) scale(1.3); opacity: 0.8; }
+  100% { transform: translate(10%, 10%) scale(1.1); opacity: 0.6; }
+}
+
+/* Scanning line */
+.scan-line {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
+  z-index: 1;
+  animation: scanMove 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanMove {
+  0% { top: 0; opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { top: 100%; opacity: 0; }
 }
 
 .container {
+  position: relative;
+  z-index: 2;
   text-align: center;
-  padding: 2rem;
+  padding: 2rem 1.5rem;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
+}
+
+/* Glass morphism card behind counter */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(0, 255, 255, 0.08);
+  border-radius: 32px;
+  padding: 3rem 2rem;
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 40px rgba(0, 255, 255, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+}
+
+/* Corner accents */
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: 12px; left: 12px; right: 12px; bottom: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.04);
+  border-radius: 24px;
+  pointer-events: none;
 }
 
 .label {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #a78bfa;
-  margin-bottom: 1rem;
-  letter-spacing: 0.05em;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 255, 0.5);
+  margin-bottom: 2rem;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
+/* Counter display */
 .counter {
-  font-size: 14rem;
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(135deg, #a78bfa, #60a5fa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: transform 0.15s ease;
-  user-select: none;
-}
-
-.counter.pop {
-  animation: pop 0.3s ease;
-}
-
-@keyframes pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
-
-.status {
-  margin-top: 2rem;
-  font-size: 0.875rem;
-  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  perspective: 1200px;
+}
+
+.digit-cell {
+  position: relative;
+  width: 100px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(0, 255, 255, 0.08);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 255, 255, 0.05);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: box-shadow 0.3s ease;
+}
+
+.digit-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg,
+    rgba(0, 255, 255, 0.02) 0%,
+    transparent 40%,
+    transparent 60%,
+    rgba(0, 255, 255, 0.02) 100%
+  );
+  pointer-events: none;
+}
+
+/* Liquid glass shine effect */
+.digit-cell::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  animation: liquidShine 6s ease-in-out infinite;
+}
+
+@keyframes liquidShine {
+  0%, 100% { transform: translate(-10%, -10%); opacity: 0.5; }
+  50% { transform: translate(10%, 10%); opacity: 1; }
+}
+
+/* Divider between top and bottom halves of digit */
+.digit-cell .divider {
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 1px;
+  background: rgba(0, 255, 255, 0.1);
+  transform: translateY(-0.5px);
+  z-index: 5;
+}
+
+.digit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 4.5rem;
+  font-weight: 300;
+  line-height: 1;
+  color: #c0f0ff;
+  text-shadow:
+    0 0 10px rgba(0, 255, 255, 0.3),
+    0 0 30px rgba(0, 255, 255, 0.1);
+  transform-style: preserve-3d;
+  transition: transform 0s;
+  user-select: none;
+  position: relative;
+  z-index: 2;
+}
+
+.digit.flipping {
+  animation: digitFlip 0.5s ease-in-out;
+}
+
+@keyframes digitFlip {
+  0% {
+    transform: rotateX(0deg);
+    color: #c0f0ff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  }
+  40% {
+    transform: rotateX(-90deg);
+    color: #ff00c8;
+    text-shadow: 0 0 20px rgba(255, 0, 200, 0.5);
+  }
+  50% {
+    transform: rotateX(-90deg);
+    color: #ff00c8;
+    text-shadow: 0 0 20px rgba(255, 0, 200, 0.5);
+  }
+  100% {
+    transform: rotateX(0deg);
+    color: #c0f0ff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  }
+}
+
+/* Neon accent pulse on increment */
+.digit-cell.pulse {
+  animation: cellPulse 0.5s ease-out;
+}
+
+@keyframes cellPulse {
+  0% {
+    border-color: rgba(0, 255, 255, 0.3);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(0, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  30% {
+    border-color: rgba(255, 0, 200, 0.3);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      0 0 40px rgba(255, 0, 200, 0.15),
+      inset 0 1px 0 rgba(255, 0, 200, 0.1);
+  }
+  100% {
+    border-color: rgba(0, 255, 255, 0.08);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 255, 255, 0.05);
+  }
+}
+
+.status {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #ef4444;
   display: inline-block;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  transition: all 0.3s ease;
 }
 
-.dot.connected { background: #22c55e; }
-.dot.connecting { background: #eab308; }
+.dot.connected {
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.dot.connecting {
+  background: #eab308;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
 .last-update {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: #4b5563;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.1);
+  margin-top: 0.25rem;
+  letter-spacing: 0.05em;
 }
 
-@media (max-width: 480px) {
-  .counter { font-size: 6rem; }
-  .label { font-size: 1.125rem; }
+/* Glow border on hover */
+.glass-card:hover .digit-cell {
+  border-color: rgba(0, 255, 255, 0.12);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container { padding: 1rem 0.75rem; }
+  .glass-card { padding: 2rem 1rem; border-radius: 24px; }
+  .label { font-size: 0.6rem; letter-spacing: 0.25em; margin-bottom: 1rem; }
+  .counter { gap: 0.35rem; }
+  .digit-cell { width: 60px; height: 80px; border-radius: 10px; }
+  .digit { font-size: 2.5rem; }
+  .status { font-size: 0.5rem; }
+  .last-update { font-size: 0.45rem; }
+}
+
+@media (max-width: 380px) {
+  .digit-cell { width: 46px; height: 64px; border-radius: 8px; }
+  .digit { font-size: 1.8rem; }
+  .counter { gap: 0.25rem; }
+  .label { font-size: 0.5rem; }
 }
 </style>
 </head>
 <body>
 
+<div class="scan-line"></div>
+
 <div class="container">
-  <div class="label" id="label">Loading...</div>
-  <div class="counter" id="counter">—</div>
-  <div class="status">
-    <span class="dot" id="dot"></span>
-    <span id="status-text">Connecting...</span>
+  <div class="glass-card" id="glassCard">
+    <div class="label" id="label">—</div>
+
+    <div class="counter" id="counter"></div>
+
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">ИНИЦИАЛИЗАЦИЯ</span>
+    </div>
+    <div class="last-update" id="last-update"></div>
   </div>
-  <div class="last-update" id="last-update"></div>
 </div>
 
 <script>
 const SUPABASE_URL = 'https://wnsaumdxenokulbpzckv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Induc2F1bWR4ZW5va3VsYnB6Y2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMDAzMTgsImV4cCI6MjA5ODc3NjMxOH0.APbc63eb6cbyTfSpx3yoCi0hosDaNBMnWBPawloSHx8';
 const COUNTER_ID = 'ПМ-Гросса';
+const MIN_DIGITS = 4;
 
 const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -114,34 +382,85 @@ const dotEl = document.getElementById('dot');
 const statusText = document.getElementById('status-text');
 const lastUpdateEl = document.getElementById('last-update');
 
+let currentDigits = [];
+
 function setStatus(state) {
   dotEl.className = 'dot';
   if (state === 'connected') {
     dotEl.classList.add('connected');
-    statusText.textContent = 'Connected';
+    statusText.textContent = 'СИСТЕМА АКТИВНА';
   } else if (state === 'connecting') {
     dotEl.classList.add('connecting');
-    statusText.textContent = 'Connecting...';
+    statusText.textContent = 'ПОДКЛЮЧЕНИЕ...';
   } else {
-    statusText.textContent = 'Disconnected';
+    statusText.textContent = 'ОТКЛЮЧЕНО';
+  }
+}
+
+function buildDigitCells(count) {
+  counterEl.innerHTML = '';
+  currentDigits = [];
+  for (let i = 0; i < count; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'digit-cell';
+
+    const digit = document.createElement('span');
+    digit.className = 'digit';
+    digit.textContent = '0';
+
+    const divider = document.createElement('div');
+    divider.className = 'divider';
+
+    cell.appendChild(digit);
+    cell.appendChild(divider);
+    counterEl.appendChild(cell);
+    currentDigits.push({ cell, digit, value: 0 });
+  }
+}
+
+function padNumber(num, length) {
+  return String(num).padStart(length, '0');
+}
+
+function updateCounter(value) {
+  const strVal = padNumber(value, Math.max(MIN_DIGITS, String(value).length));
+
+  if (currentDigits.length !== strVal.length) {
+    buildDigitCells(strVal.length);
+  }
+
+  for (let i = 0; i < strVal.length; i++) {
+    const newDigit = strVal[i];
+    const cellData = currentDigits[i];
+    const oldDigit = cellData.value;
+
+    if (String(oldDigit) !== newDigit) {
+      cellData.digit.textContent = newDigit;
+      cellData.digit.classList.remove('flipping');
+      cellData.cell.classList.remove('pulse');
+
+      void cellData.digit.offsetWidth;
+
+      cellData.digit.classList.add('flipping');
+      cellData.cell.classList.add('pulse');
+      cellData.value = newDigit;
+    }
   }
 }
 
 function updateDisplay(data) {
   if (!data) return;
   const value = data.value ?? 0;
-  if (counterEl.textContent !== String(value)) {
-    counterEl.textContent = value;
-    counterEl.classList.remove('pop');
-    void counterEl.offsetWidth;
-    counterEl.classList.add('pop');
-  }
+  updateCounter(value);
   if (data.label) {
-    labelEl.textContent = data.label;
+    labelEl.textContent = data.label.toUpperCase();
   }
   if (data.updated_at) {
     const d = new Date(data.updated_at);
-    lastUpdateEl.textContent = 'Last update: ' + d.toLocaleString('ru-RU');
+    lastUpdateEl.textContent = d.toLocaleString('ru-RU', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
   }
 }
 
@@ -157,16 +476,17 @@ async function loadInitial() {
       console.error('Load error:', error);
     }
 
+    buildDigitCells(MIN_DIGITS);
+
     if (data) {
       updateDisplay(data);
     } else {
-      counterEl.textContent = '0';
-      labelEl.textContent = COUNTER_ID;
+      labelEl.textContent = COUNTER_ID.toUpperCase();
     }
   } catch (err) {
     console.error('Load error:', err);
-    counterEl.textContent = '0';
-    labelEl.textContent = COUNTER_ID;
+    buildDigitCells(MIN_DIGITS);
+    labelEl.textContent = COUNTER_ID.toUpperCase();
   }
 }
 
