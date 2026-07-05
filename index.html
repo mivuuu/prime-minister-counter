@@ -4,14 +4,45 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Счётчик высеров Гросса</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0a;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --text: rgba(255, 255, 255, 0.92);
+  --text-muted: rgba(255, 255, 255, 0.3);
+  --text-faint: rgba(255, 255, 255, 0.12);
+  --cell-bg: rgba(255, 255, 255, 0.05);
+  --cell-border: rgba(255, 255, 255, 0.06);
+  --acc: rgba(0, 122, 255, 0.25);
+  --acc-shadow: rgba(0, 122, 255, 0.06);
+  --toggle-bg: rgba(255, 255, 255, 0.08);
+  --toggle-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] {
+  --bg: #f2f2f7;
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  --text: #1d1d1f;
+  --text-muted: rgba(0, 0, 0, 0.3);
+  --text-faint: rgba(0, 0, 0, 0.15);
+  --cell-bg: rgba(255, 255, 255, 0.6);
+  --cell-border: rgba(0, 0, 0, 0.06);
+  --acc: rgba(0, 122, 255, 0.15);
+  --acc-shadow: rgba(0, 122, 255, 0.04);
+  --toggle-bg: rgba(0, 0, 0, 0.06);
+  --toggle-color: rgba(0, 0, 0, 0.4);
+}
 
 body {
-  background: #0a0a0a;
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--bg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
   height: 100vh;
   height: 100dvh;
@@ -21,29 +52,79 @@ body {
   justify-content: center;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.4s ease;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0, 122, 255, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .container {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 560px;
   padding: 1.5rem;
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.04);
+  position: relative;
+  background: var(--card-bg);
   backdrop-filter: blur(80px) saturate(1.2);
   -webkit-backdrop-filter: blur(80px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--card-border);
   border-radius: 24px;
   padding: 2.5rem 2rem;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--card-shadow);
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.toggle {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--toggle-bg);
+  color: var(--toggle-color);
+  font-size: 1.15rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.toggle:hover { transform: scale(1.1); }
+.toggle:active { transform: scale(0.92); }
+
+.toggle span {
+  display: block;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+
+.toggle span.flip-out {
+  transform: rotate(90deg) scale(0.5);
+  opacity: 0;
+}
+
+.toggle span.flip-in {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
 }
 
 .label {
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   text-align: center;
   margin-bottom: 1.75rem;
   text-transform: uppercase;
@@ -52,6 +133,7 @@ body {
   max-width: 90%;
   margin-left: auto;
   margin-right: auto;
+  transition: color 0.4s ease;
 }
 
 .counter {
@@ -68,22 +150,22 @@ body {
   width: 88px;
   height: 112px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--cell-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--cell-border);
   box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  transition: border-color 0.3s ease;
+  transition: background 0.4s ease, border-color 0.4s ease;
 }
 
 .digit-cell.active {
-  border-color: rgba(0, 122, 255, 0.25);
+  border-color: var(--acc);
   box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(0, 122, 255, 0.06),
+    0 0 24px var(--acc-shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -92,7 +174,7 @@ body {
   left: 0; right: 0;
   top: 50%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--cell-border);
   z-index: 2;
   pointer-events: none;
 }
@@ -107,45 +189,48 @@ body {
   font-size: 3.75rem;
   font-weight: 300;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--text);
   letter-spacing: -0.02em;
   user-select: none;
+  transition: color 0.4s ease;
 }
 
 .digit-old {
-  animation: slideUpOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideUpOut 0.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 .digit-new {
-  animation: slideUpIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideUpIn 0.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 .digit-old.reverse {
-  animation: slideDownOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideDownOut 0.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 .digit-new.reverse {
-  animation: slideDownIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideDownIn 0.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
 }
 
 @keyframes slideUpOut {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(-100%); opacity: 0; }
+  0% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
+  100% { transform: translateY(-80%) scale(0.8); opacity: 0; filter: blur(4px); }
 }
 
 @keyframes slideUpIn {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  0% { transform: translateY(80%) scale(0.8); opacity: 0; filter: blur(4px); }
+  60% { filter: blur(0px); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
 }
 
 @keyframes slideDownOut {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100%); opacity: 0; }
+  0% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
+  100% { transform: translateY(80%) scale(0.8); opacity: 0; filter: blur(4px); }
 }
 
 @keyframes slideDownIn {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  0% { transform: translateY(-80%) scale(0.8); opacity: 0; filter: blur(4px); }
+  60% { filter: blur(0px); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
 }
 
 .status {
@@ -165,9 +250,7 @@ body {
   transition: all 0.4s ease;
 }
 
-.dot.connected {
-  background: #34c759;
-}
+.dot.connected { background: #34c759; }
 
 .dot.connecting {
   background: #ff9f0a;
@@ -182,25 +265,28 @@ body {
 .status-text {
   font-size: 0.7rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-muted);
   letter-spacing: 0.05em;
   font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+  transition: color 0.4s ease;
 }
 
 .last-update {
   text-align: center;
   font-size: 0.6rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.12);
+  color: var(--text-faint);
   margin-top: 0.15rem;
   font-variant-numeric: tabular-nums;
   font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+  transition: color 0.4s ease;
 }
 
 @media (max-width: 600px) {
   body { touch-action: none; }
   .container { padding: 0.5rem; }
-  .card { padding: 1.5rem 0.75rem; border-radius: 20px; }
+  .card { padding: 1.75rem 0.75rem; border-radius: 20px; }
+  .toggle { top: 10px; right: 10px; width: 32px; height: 32px; font-size: 1rem; }
   .label { font-size: 0.5rem; margin-bottom: 1rem; max-width: 95%; }
   .counter { gap: 0.35rem; margin-bottom: 1rem; }
   .digit-cell { width: 56px; height: 74px; border-radius: 12px; }
@@ -209,7 +295,8 @@ body {
 
 @media (max-width: 380px) {
   .label { font-size: 0.45rem; }
-  .card { padding: 1rem 0.5rem; border-radius: 16px; }
+  .card { padding: 1.25rem 0.5rem; border-radius: 16px; }
+  .toggle { top: 8px; right: 8px; width: 28px; height: 28px; font-size: 0.85rem; }
   .digit-cell { width: 44px; height: 58px; border-radius: 10px; }
   .digit { font-size: 1.75rem; }
   .counter { gap: 0.25rem; }
@@ -220,6 +307,10 @@ body {
 
 <div class="container">
   <div class="card">
+    <button class="toggle" id="themeToggle" aria-label="Switch theme">
+      <span id="toggleIcon">☾</span>
+    </button>
+
     <div class="label" id="label">Столько раз высрался гроссцийский мудак</div>
 
     <div class="counter" id="counter"></div>
@@ -246,10 +337,47 @@ const labelEl = document.getElementById('label');
 const dotEl = document.getElementById('dot');
 const statusText = document.getElementById('status-text');
 const lastUpdateEl = document.getElementById('last-update');
+const themeToggle = document.getElementById('themeToggle');
+const toggleIcon = document.getElementById('toggleIcon');
 
 let cells = [];
 let prevValue = 0;
 
+/* === Theme === */
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  toggleIcon.textContent = theme === 'dark' ? '☾' : '☀';
+  toggleIcon.className = '';
+  void toggleIcon.offsetWidth;
+  toggleIcon.classList.add('flip-in');
+  localStorage.setItem('theme', theme);
+}
+
+function toggleTheme() {
+  toggleIcon.classList.remove('flip-in');
+  toggleIcon.classList.add('flip-out');
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  setTimeout(() => setTheme(next), 180);
+}
+
+const saved = localStorage.getItem('theme');
+const initial = saved || getSystemTheme();
+setTheme(initial);
+
+themeToggle.addEventListener('click', toggleTheme);
+
+window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+  if (!localStorage.getItem('theme')) {
+    setTheme(e.matches ? 'light' : 'dark');
+  }
+});
+
+/* === Counter === */
 function setStatus(state) {
   dotEl.className = 'dot';
   if (state === 'connected') {
@@ -322,7 +450,7 @@ function updateCounter(value) {
       setTimeout(() => {
         oldEl.remove();
         newEl.classList.remove('digit-new', 'reverse');
-      }, 400);
+      }, 450);
 
       c.val = d;
     }
