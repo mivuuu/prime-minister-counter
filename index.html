@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Counter</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0f;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  text-align: center;
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.label {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #a78bfa;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.counter {
+  font-size: 14rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+
+.counter.pop {
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.status {
+  margin-top: 2rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+}
+
+.dot.connected { background: #22c55e; }
+.dot.connecting { background: #eab308; }
+
+.last-update {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #4b5563;
+}
+
+@media (max-width: 480px) {
+  .counter { font-size: 6rem; }
+  .label { font-size: 1.125rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="label" id="label">Loading...</div>
+  <div class="counter" id="counter">—</div>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="status-text">Connecting...</span>
+  </div>
+  <div class="last-update" id="last-update"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wnsaumdxenokulbpzckv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Induc2F1bWR4ZW5va3VsYnB6Y2t2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMDAzMTgsImV4cCI6MjA5ODc3NjMxOH0.APbc63eb6cbyTfSpx3yoCi0hosDaNBMnWBPawloSHx8';
+const COUNTER_ID = 'ПМ-Гросса';
+
+const { createClient } = supabase;
+const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const counterEl = document.getElementById('counter');
+const labelEl = document.getElementById('label');
+const dotEl = document.getElementById('dot');
+const statusText = document.getElementById('status-text');
+const lastUpdateEl = document.getElementById('last-update');
+
+function setStatus(state) {
+  dotEl.className = 'dot';
+  if (state === 'connected') {
+    dotEl.classList.add('connected');
+    statusText.textContent = 'Connected';
+  } else if (state === 'connecting') {
+    dotEl.classList.add('connecting');
+    statusText.textContent = 'Connecting...';
+  } else {
+    statusText.textContent = 'Disconnected';
+  }
+}
+
+function updateDisplay(data) {
+  if (!data) return;
+  const value = data.value ?? 0;
+  if (counterEl.textContent !== String(value)) {
+    counterEl.textContent = value;
+    counterEl.classList.remove('pop');
+    void counterEl.offsetWidth;
+    counterEl.classList.add('pop');
+  }
+  if (data.label) {
+    labelEl.textContent = data.label;
+  }
+  if (data.updated_at) {
+    const d = new Date(data.updated_at);
+    lastUpdateEl.textContent = 'Last update: ' + d.toLocaleString('ru-RU');
+  }
+}
+
+async function loadInitial() {
+  try {
+    const { data, error } = await client
+      .from('counters')
+      .select('*')
+      .eq('id', COUNTER_ID)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Load error:', error);
+    }
+
+    if (data) {
+      updateDisplay(data);
+    } else {
+      counterEl.textContent = '0';
+      labelEl.textContent = COUNTER_ID;
+    }
+  } catch (err) {
+    console.error('Load error:', err);
+    counterEl.textContent = '0';
+    labelEl.textContent = COUNTER_ID;
+  }
+}
+
+setStatus('connecting');
+
+client
+  .channel('counters-realtime')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'counters' },
+    (payload) => {
+      if (payload.new && payload.new.id === COUNTER_ID) {
+        updateDisplay(payload.new);
+      }
+    }
+  )
+  .subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      setStatus('connected');
+    }
+  });
+
+loadInitial();
+</script>
+</body>
+</html>
