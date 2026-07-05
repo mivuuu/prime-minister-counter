@@ -67,9 +67,6 @@ body {
   position: relative;
   width: 88px;
   height: 112px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
@@ -79,7 +76,6 @@ body {
     0 2px 12px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  transform-style: preserve-3d;
   transition: border-color 0.3s ease;
 }
 
@@ -102,41 +98,38 @@ body {
 }
 
 .digit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'SF Mono', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
   font-size: 3.75rem;
   font-weight: 300;
   line-height: 1;
   color: rgba(255, 255, 255, 0.92);
   letter-spacing: -0.02em;
-  transform-style: preserve-3d;
   user-select: none;
-  position: relative;
-  z-index: 1;
 }
 
-.digit.flip {
-  animation: flipDigit 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+.digit-old {
+  animation: slideUpOut 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  color: rgba(0, 122, 255, 0.6);
 }
 
-@keyframes flipDigit {
-  0% {
-    transform: rotateX(0deg);
-    opacity: 1;
-  }
-  45% {
-    transform: rotateX(-90deg);
-    opacity: 0.3;
-    color: rgba(0, 122, 255, 0.8);
-  }
-  55% {
-    transform: rotateX(90deg);
-    opacity: 0.3;
-    color: rgba(0, 122, 255, 0.8);
-  }
-  100% {
-    transform: rotateX(0deg);
-    opacity: 1;
-  }
+.digit-new {
+  animation: slideUpIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  color: rgba(0, 122, 255, 0.6);
+}
+
+@keyframes slideUpOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes slideUpIn {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .status {
@@ -289,12 +282,27 @@ function updateCounter(value) {
     const d = str[i];
     const c = cells[i];
     if (String(c.val) !== d) {
-      c.digit.textContent = d;
-      c.digit.classList.remove('flip');
+      const oldEl = c.cell.querySelector('.digit');
+      const divider = c.cell.querySelector('.divider');
+
+      const newEl = document.createElement('span');
+      newEl.className = 'digit digit-new';
+      newEl.textContent = d;
+
+      oldEl.classList.remove('digit');
+      oldEl.classList.add('digit', 'digit-old');
+
+      c.cell.insertBefore(newEl, divider);
+
       c.cell.classList.remove('active');
-      void c.digit.offsetWidth;
-      c.digit.classList.add('flip');
+      void newEl.offsetWidth;
       c.cell.classList.add('active');
+
+      setTimeout(() => {
+        oldEl.remove();
+        newEl.classList.remove('digit-new');
+      }, 400);
+
       c.val = d;
     }
   }
